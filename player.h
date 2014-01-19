@@ -14,7 +14,7 @@ class Player
  public:
   Player(string name) : _name(name) {};
   
-  Card* play(GameState& iGameState, int invalidErrorMessage);	  
+  Card* play(MatchState& iMatchState, int invalidErrorMessage);	  
   
   virtual Card* playCard(int invalidErrorMessage) = 0;
 
@@ -30,9 +30,12 @@ class Player
 
   string getName() const;
 
-  GameState _currentGameState;
+  MatchState _currentMatchState;
 
   virtual void organizeCards() = 0;
+
+  virtual sf::Vector2f getPlayedCardPosition() = 0;
+
  
  private : 
   void receiveCard(Card* c);

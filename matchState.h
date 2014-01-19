@@ -7,19 +7,21 @@
 #define __GAME_STATE_H__
 
 //TODO: enhance this class
-class GameState
+class MatchState
 {
  friend class GameBoard;
 
  public :
-  GameState(map<PlayerId, PlayerStatus*>* playersStatus) : _allPlayersCurrentStatus(0)
+  MatchState(map<PlayerId, PlayerStatus*>* playersStatus) : _allPlayersCurrentStatus(0), _roundNumber(1)
   {
 	_allPlayersCurrentStatus = playersStatus;
   }
 
-  GameState() : _allPlayersCurrentStatus(0){};
+  MatchState() : _allPlayersCurrentStatus(0){};
 
   CardSuit _masterSuit;
+
+  int _roundNumber;
   map<PlayerId, PlayerStatus*>* _allPlayersCurrentStatus;
 
   bool isPlayerFirstToPlay(PlayerId player);
@@ -27,6 +29,8 @@ class GameState
   bool hasPlayerPlayed(const PlayerId player);
 
   Card* getCardOfPlayer(PlayerId player);
+
+  bool isFirstRound();
 
  private :
 	void defineFirstToPlay(PlayerId player);

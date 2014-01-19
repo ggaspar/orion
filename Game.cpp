@@ -9,8 +9,12 @@
 
 sf::RenderWindow Game::_mainWindow;
 GameBoard* Game::_gameBoard = 0;
-Game::GameState2 Game::_gameState = Uninitialized;
+Game::GameState Game::_gameState = Uninitialized;
 map<PlayerId,string> _players;
+GameBoard::GamePhase Game::_matchPhase = GameBoard::GamePhase::NotPlaying;
+float Game::_waitingTime;
+
+
 
 sf::Clock Game::_clock;
 GameObjectManager Game::_gameObjectManager;
@@ -31,7 +35,7 @@ void Game::startGame()
 	//sf::RenderWindow window(sf::VideoMode(800,800,320), "Hello world!");
 	//sf::CircleShape shape(400.f);
 	//shape.setFillColor(sf::Color::Green);
-
+	Game::_waitingTime = 0.0;
 	if(_gameState != Uninitialized)
 	{
 		return;
@@ -40,25 +44,10 @@ void Game::startGame()
 	_gameState= Game::ShowingMenu;
 
 	//res 800x600 with 32 bpp resolution
-	_mainWindow.create(sf::VideoMode(800,600,32), "Orion");
+	_mainWindow.create(sf::VideoMode(800,600,32), "Orion", sf::Style::Titlebar | sf::Style::Close);	
+	_mainWindow.setVerticalSyncEnabled(true);
+	
 
-
-	/*Card* c1 = new Card('A', 'D', 1);
-	Card* c2 = new Card('K', 'D', 1);
-	Card* c3 = new Card('Q', 'D', 1);
-
-	//c1->load("assets/images/cards/diamonds-a-75.png");
-	//c2->load("assets/images/cards/diamonds-k-75.png");
-	//c3->load("assets/images/cards/diamonds-q-75.png");
-
-	c3->setPosition((800/2)-90,480);
-	c2->setPosition((800/2),480);
-	c1->setPosition((800/2)+90,480);
-
-	_gameObjectManager.add("c1",c1);
-	_gameObjectManager.add("c2",c2);
-	_gameObjectManager.add("c3",c3);
-	*/
 
 	while (!isExiting())
     {
@@ -101,9 +90,6 @@ void Game::gameLoop()
 		}
 		
 	}
-	/*window.clear();
-	window.draw(shape);
-	window.display();*/
 }
 
 void Game::showDebug()
@@ -112,7 +98,14 @@ void Game::showDebug()
 	sf::Vector2i pos = sf::Mouse::getPosition(_mainWindow);
 
 	std::stringstream ss;
-	ss << "DEBUG INFO! posX: " << pos.x << " posY:" << pos.y;
+	ss << "DEBUG INFO!" << endl << "Pos: " << pos.x << ", " << pos.y << endl;
+	VisibleGameObject* object = _gameObjectManager.getObjectByPos(pos);
+	if(object)
+	{
+		ss << "Object: " << _gameObjectManager.getObjectNameByPos(pos);
+		ss << " pos: " << object->getPosition().x << ", " << object->getPosition().y <<endl;
+	}
+	ss << "Wating time: " << _waitingTime <<endl;
 	string debugInfo = ss.str();			
 	text.setString(debugInfo);
 	text.setCharacterSize(16); // in pixels, not points!
@@ -141,10 +134,9 @@ void Game::plays()
 	_gameObjectManager.updateAll(_clock);
 	_gameObjectManager.drawAll(_mainWindow);
 	showDebug();
-	_mainWindow.display();
 
 
-
+	_gameBoard->ShowStats();
 	if(_currentEvent.type == sf::Event::Closed)
 	{
 		_gameState = Game::Exiting;
@@ -156,36 +148,27 @@ void Game::plays()
 			showMenu();
 		}
 	}
+	if(_matchPhase == GameBoard::GamePhase::EndingRound || _matchPhase == GameBoard::GamePhase::FinishingMatch)
+		//&& )
+	{	
+		_waitingTime = _waitingTime + _clock.getElapsedTime().asSeconds();
+		if (_matchPhase == GameBoard::GamePhase::FinishingMatch)
+		{
+			_gameBoard->processMatchWinner();
+		}
+		if(_waitingTime > TIME_BETWEEN_ROUNDS && _currentEvent.type == sf::Event::MouseButtonPressed)
+		{
+			_matchPhase = _gameBoard->go();
+		}
+
+	}
 	else
 	{
-		_gameBoard->go();
+		_matchPhase = _gameBoard->go();
+		_waitingTime = 0.0;
 	}
-	if(_currentEvent.type == sf::Event::MouseButtonPressed)
-	{
-		/*cout << "X: " << _currentEvent.mouseButton.x <<endl;
-		cout << "Y: " << _currentEvent.mouseButton.y << endl;
-		if(_currentEvent.mouseButton.x > 255 &&
-			_currentEvent.mouseButton.x < 290 && 
-			_currentEvent.mouseButton.y < 600 &&
-			_currentEvent.mouseButton.y > 480)
-		{
-			((Card*)_gameObjectManager.get("c1"))->playCard();
-		}	
-		if(_currentEvent.mouseButton.x > 310 &&
-			_currentEvent.mouseButton.x < 355 && 
-			_currentEvent.mouseButton.y < 600 &&
-			_currentEvent.mouseButton.y > 480)
-		{
-			((Card*)_gameObjectManager.get("c2"))->playCard();
-		}	
-		if(_currentEvent.mouseButton.x > 400 &&
-			_currentEvent.mouseButton.x < 435 && 
-			_currentEvent.mouseButton.y < 600 &&
-			_currentEvent.mouseButton.y > 480)
-		{
-			((Card*)_gameObjectManager.get("c3"))->playCard();
-		}	*/
-	}
+
+	_mainWindow.display();
 
 }
 void Game::showSplashScreen()

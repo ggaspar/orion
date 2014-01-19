@@ -1,9 +1,9 @@
 #include <string>
 #include "player.h"
 
-Card* Player::play(GameState& iGameState, int invalidErrorMessage)
+Card* Player::play(MatchState& iMatchState, int invalidErrorMessage)
 {
-	_currentGameState = iGameState;
+	_currentMatchState = iMatchState;
 	Card* c = playCard(invalidErrorMessage);
 	return c;
 }
@@ -38,5 +38,6 @@ string Player::getName() const
 void Player::receiveCard(Card* c)
 {
 	_cards.pushCard(c);
+	c->setPlayedPosition(getPlayedCardPosition());
 }
 

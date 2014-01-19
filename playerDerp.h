@@ -9,7 +9,10 @@ class PlayerDerp  : public Player
     PlayerDerp(string name) : Player(name) {};
 
 	Card* playCard(int invalidErrorMessage);
-	void organizeCards() {};
+	void organizeCards();
+	
+	sf::Vector2f getPlayedCardPosition();
+
 
 };
 

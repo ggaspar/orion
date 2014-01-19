@@ -1,6 +1,7 @@
 #include "stdsfml.h"
 #include "GameObjectManager.h"
 #include "tools.h"
+#include "resources.h"
  
  
  
@@ -77,28 +78,46 @@ void GameObjectManager::updateAll(sf::Clock clock)
 
 VisibleGameObject* GameObjectManager::getClickedObject(sf::Vector2i clickPosition)
 {
-	map<std::string, VisibleGameObject*>::iterator itObjects = _gameObjects.begin();
+	pair<string,VisibleGameObject*> object = getObjectPair(clickPosition, true);
+	return object.second;
+}
+
+VisibleGameObject* GameObjectManager::getObjectByPos(sf::Vector2i clickPosition)
+{
+	pair<string,VisibleGameObject*> object = getObjectPair(clickPosition, false);
+	return object.second;
+}
+
+
+
+string GameObjectManager::getObjectNameByPos(sf::Vector2i clickPosition)
+{
+	pair<string,VisibleGameObject*> object = getObjectPair(clickPosition, false);
+	return object.first;
+}
+
+pair<string,VisibleGameObject*> GameObjectManager::getObjectPair(sf::Vector2i clickPosition, bool onlyClickable)
+{
+	map<string, VisibleGameObject*>::iterator itObjects = _gameObjects.begin();
+	pair<string, VisibleGameObject*> result = make_pair("",new VisibleGameObject());
 	for ( itObjects = _gameObjects.begin(); itObjects != _gameObjects.end(); ++itObjects)
 	{
-		VisibleGameObject object = (*itObjects->second);
-		sf::Vector2f objectPosition = object.getPosition();
+		VisibleGameObject *object = itObjects->second;
+		sf::Vector2f objectPosition = object->getPosition();
 		//int height = object._height;
-		int topLimit = objectPosition.y + object._height;
+		int topLimit = objectPosition.y + CARD_HEIGHT;
 		int bottomLimit = objectPosition.y ;
 		int leftLimit = objectPosition.x;
-		int rightLimit = objectPosition.y + object._height;
+		int rightLimit = objectPosition.x + CARD_WIDTH;
 
 		//bug: not catching the mouse position at exact moment of click
-		if (clickPosition.x < rightLimit && clickPosition.x > leftLimit && 
+		if ((object->isClicable() || !onlyClickable) && 
+			clickPosition.x < rightLimit && clickPosition.x > leftLimit && 
 			clickPosition.y < topLimit && clickPosition.y > bottomLimit)
 		{
-			return &object;
+			result = (*itObjects);
+			break;
 		}
-
-
-		//sf::
 	}
-
-	return 0;
-
+	return result;
 }

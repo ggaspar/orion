@@ -10,38 +10,53 @@
 #include <algorithm>
 
 
-void GameBoard::go()
-{
+GameBoard::GamePhase GameBoard::go()
+{	
+	//ShowStats();
 	switch (_currentGamePhase)
 	{
-		case GameBoard::StartingRound:
-			startGame();
+		case StartingRound:
+			startNewMatch();
 			break;
-		case GameBoard::Playing:
+		case Playing:
 			playOneRound();
+			break;
+		case EndingRound:
+			endRound();
+			break;
+		case FinishingMatch:
+			startNewMatch();
 			break;
 		default:
 			break;
 	}
+
+	return _currentGamePhase;
 }
 
 
-PlayerId GameBoard::addPlayer(Player* iPlayer)
+PlayerId GameBoard::addPlayer(Player* iPlayer, CardinalPosition pos)
 {
 	PlayerId id = _allPlayersStatus.empty() ? 0 : _players.size();
-	_allPlayersStatus[id] = (new PlayerStatus(id, iPlayer->getName(),  Rules::NumberOfInitialCards()));
+	_allPlayersStatus[id] = (new PlayerStatus(id, iPlayer->getName(), pos));
 	_players[id] = iPlayer;
 	return id;
 }
 
 
-void GameBoard::startGame()
+void GameBoard::startNewMatch()
 {
-	_gameState = new GameState(&_allPlayersStatus);
+	
+	_matchState = new MatchState(&_allPlayersStatus);
+	map<PlayerId, PlayerStatus*>::iterator playersIt = _allPlayersStatus.begin();
+	for(;playersIt != _allPlayersStatus.end(); ++playersIt)
+	{ 
+		(*playersIt).second->reset(Rules::NumberOfInitialCards());
+	}
 	dealCards();
 	defineFirstToPlay();
 	//TODO: erase allPlayersStatus
-	/*while (Rules::roundsToPlay(*_gameState)>0)
+	/*while (Rules::roundsToPlay(*_matchState)>0)
 	{
 		
 		playOneRound();
@@ -50,26 +65,28 @@ void GameBoard::startGame()
 	announceWinner();*/
 }
 
-void GameBoard::announceWinner()
+
+void GameBoard::ShowStats()
 {
-	PlayerId winner = Rules::getGameWinner(*_gameState);
-	if(winner == -1)
-	{
-		UserInterface::showMatchDraw();
+	map<PlayerId, PlayerStatus*>::iterator playersIt = _allPlayersStatus.begin();
+	for(;playersIt != _allPlayersStatus.end(); ++playersIt)
+	{ 
+		UserInterface::showMatchState((*(*playersIt).second));
 	}
-	else
-	{
-		UserInterface::showMatchWinner(_players[winner]->_name);
-	}	
 }
 
 void GameBoard::playOneRound()
 {			
-	//do
-	//{
-		playCard();		
-	//}
-	//while( getNextPlayer() != -1);			
+
+	if ( _currentPlayer_id == -1)
+	{
+		_currentGamePhase = EndingRound;
+	}
+	else
+	{
+		playCard();	
+	}
+	
 	//endRound();
 }
 
@@ -97,30 +114,30 @@ void GameBoard::dealCards()
 
 int GameBoard::getNumberOfPlayers() const
 {
-	return _gameState->_allPlayersCurrentStatus->size();
+	return _matchState->_allPlayersCurrentStatus->size();
 }
 
 void GameBoard::defineFirstToPlay()
 {
 	//to randomly choose a player, if there's no defined first player
-	/*int i = randomInt(_players.size());
+	int i = randomInt(_players.size());
 	
 	//TODO: iterate over playerIds (first of map players)
 	for(int pIndex = 0;	pIndex < getNumberOfPlayers(); ++pIndex)
 	{ 
-		if (_gameState->isPlayerFirstToPlay(pIndex))
+		if (_matchState->isPlayerFirstToPlay(pIndex))
 		{
 			i = pIndex;
 		}
 	}
-	_gameState->defineFirstToPlay(i);
-	_currentPlayer_id = i;*/
-	_currentPlayer_id = 0;
+	_matchState->defineFirstToPlay(i);
+	_currentPlayer_id = i;
+	//_currentPlayer_id = 1;
 }
 
 PlayerStatus* GameBoard::getCurrentPlayerStatus()
 {
-	return (*_gameState->_allPlayersCurrentStatus)[_currentPlayer_id];
+	return (*_matchState->_allPlayersCurrentStatus)[_currentPlayer_id];
 }
 
 Player* GameBoard::getCurrentPlayer()
@@ -130,67 +147,103 @@ Player* GameBoard::getCurrentPlayer()
 
 PlayerId GameBoard::getNextPlayer()
 {
-	_gameState->playerPlays(_currentPlayer_id);
+	_matchState->playerPlays(_currentPlayer_id);
 	++_currentPlayer_id;
 	//TODO: add list of IDs
 	if(getNumberOfPlayers() <= _currentPlayer_id)
 	{
 		_currentPlayer_id=0;
 	}
-	if(_gameState->hasPlayerPlayed(_currentPlayer_id))
+	if(_matchState->hasPlayerPlayed(_currentPlayer_id))
 	{
 		_currentPlayer_id = -1;
 	}
 	return _currentPlayer_id;	
 }
 
-void GameBoard::newRound(PlayerId winner)
+void GameBoard::newRound()
 {		
-	_gameState->newRound(winner);
+	_matchState->newRound(_previousRoundWinner);
+	_currentPlayer_id = _previousRoundWinner;
+	_matchState->newRound(_previousRoundWinner);
+}
+
+
+void GameBoard::playCard()
+{	
+	//statusValue = VALID_MOVE;
+	Card* card = _players[_currentPlayer_id]->play(*_matchState, FIRST_MOVE);
+	int stateValid = 0;
+
+	//while((stateValid = Rules::isStateValid(*_matchState, _players[_currentPlayer_id]->_cards, *card)) != VALID_MOVE)
+	//{
+		//card = _players[_currentPlayer_id]->play(*_matchState, stateValid);
+		//_matchState->addCardToPlayer(_currentPlayer_id, card);
+	if(card && (stateValid = Rules::isStateValid(*_matchState, _players[_currentPlayer_id]->_cards, *card)) == VALID_MOVE)
+	{
+		_matchState->addCardToPlayer(_currentPlayer_id, card);
+		card->playCard();
+		_players[_currentPlayer_id]->_cards.removeCard(card);
+		_players[_currentPlayer_id]->organizeCards();
+		getNextPlayer();
+		return;
+	}
+		
+	//}
+	//
+
+	//UserInterface::showCardPlayed(_players[_currentPlayer_id]->getName(), *card);
+}
+
+
+void GameBoard::endRound()
+{
+	_previousRoundWinner = Rules::getRoundWinner(getMatchState());
+	cleanPlayedCards();	
+	addPoint();
+	if(Rules::roundsToPlay(*_matchState) != 0)
+	{
+		newRound();
+		_currentGamePhase = Playing;
+	}
+	else
+	{
+		processMatchWinner();
+		_currentGamePhase = FinishingMatch;
+	}
+	//UserInterface::showRoundWinner(_players[_previousRoundWinner]->_name);
+	//UserInterface::showMatchScore(_matchState);	
+}
+
+void GameBoard::cleanPlayedCards()
+{
+	map<PlayerId, PlayerStatus*>::iterator playersIt = _allPlayersStatus.begin();
+	for(;playersIt != _allPlayersStatus.end(); ++playersIt)
+	{ 
+		Card* card = _matchState->getCardOfPlayer((*playersIt).first);
+		card->deactivate();
+	}
+	
+}
+
+MatchState GameBoard::getMatchState()
+{
+	return *_matchState;
+}
+
+void GameBoard::processMatchWinner()
+{
+	PlayerId winner = Rules::getMatchWinner(*_matchState);
+	UserInterface::showMatchWinner(_players[winner]->_name);
+}
+
+void GameBoard::addPoint()
+{
+	_matchState->addPoint(_previousRoundWinner);
 }
 
 void GameBoard::addCardToCurrentPlayer(Card* card)
 {
 }
 
-void GameBoard::playCard()
-{	
-	//statusValue = VALID_MOVE;
-	Card* card = _players[_currentPlayer_id]->play(*_gameState, FIRST_MOVE);
-	_gameState->addCardToPlayer(_currentPlayer_id, card);
-	int stateValid = 0;
 
-	//while((stateValid = Rules::isStateValid(*_gameState, _players[_currentPlayer_id]->_cards, *card)) != VALID_MOVE)
-	//{
-		//gs.removeMasterCard();
-		card = _players[_currentPlayer_id]->play(*_gameState, stateValid);
-		_gameState->addCardToPlayer(_currentPlayer_id, card);
-		if( card )
-		{
-			return;
-		}
-	//}
-	//_players[_currentPlayer_id]->_cards.removeCard(card);
-
-	//UserInterface::showCardPlayed(_players[_currentPlayer_id]->getName(), *card);
-}
-
-void GameBoard::addPoint(PlayerId id)
-{
-	_gameState->addPoint(id);
-}
-
-void GameBoard::endRound()
-{
-	_previousRoundWinner = Rules::getRoundWinner(getGameState());
-	_gameState->addPoint(_previousRoundWinner);
-	_gameState->newRound(_previousRoundWinner);
-	//UserInterface::showRoundWinner(_players[_previousRoundWinner]->_name);
-	//UserInterface::showMatchScore(_gameState);	
-}
-
-GameState GameBoard::getGameState()
-{
-	return *_gameState;
-
-}

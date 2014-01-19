@@ -5,14 +5,19 @@
 
 
 
-int Rules::isStateValid(GameState& gameState, CardSet& cards, Card& playedCard)
+int Rules::isStateValid(MatchState& matchState, CardSet& cards, Card& playedCard)
 {
 	bool isNotValid = false;
-	if(!rValidSuit(gameState._masterSuit, cards, playedCard))
+	int result = VALID_MOVE;
+	if (matchState.isFirstRound())
 	{
-		return SUIT_NOT_FOLLOWING_MASTER;
+		result = VALID_MOVE;		
 	}
-	return VALID_MOVE;
+	else if(!rValidSuit(matchState._masterSuit, cards, playedCard))
+	{
+		result = SUIT_NOT_FOLLOWING_MASTER;
+	}
+	return result;
 }
 
 bool Rules::rValidSuit(CardSuit& masterCardSuit, CardSet& cards, Card& playedCard)
@@ -29,14 +34,14 @@ bool Rules::rValidSuit(CardSuit& masterCardSuit, CardSet& cards, Card& playedCar
 #define CARD playersIt->second->_card
 //#define CARD2 (*gameBoard->_players[PLAYER2]->_card)
 
-PlayerId Rules::getRoundWinner(GameState& gameState)
+PlayerId Rules::getRoundWinner(MatchState& matchState)
 {		
 	map<PlayerId, PlayerStatus*>::const_iterator playersIt;
 	Card* currentHighestCard = new Card();
 	PlayerId currentWinner = -1;
 	
-	for(playersIt = gameState._allPlayersCurrentStatus->begin();
-		playersIt != gameState._allPlayersCurrentStatus->end();
+	for(playersIt = matchState._allPlayersCurrentStatus->begin();
+		playersIt != matchState._allPlayersCurrentStatus->end();
 		++playersIt)
 	{
 		if(currentHighestCard == 0)
@@ -45,7 +50,7 @@ PlayerId Rules::getRoundWinner(GameState& gameState)
 			currentWinner = playersIt->first;
 			continue;
 		}
-		if( gameState._masterSuit == CARD->_suit._cSuit &&
+		if( matchState._masterSuit == CARD->_suit._cSuit &&
 			(*currentHighestCard) < (*CARD) )
 		{
 			currentHighestCard = CARD;
@@ -90,24 +95,24 @@ PlayerId Rules::getRoundWinner(GameState& gameState)
 	return highestPlayerId;*/
 }
 
-PlayerId Rules::getGameWinner(GameState& gameState)
+PlayerId Rules::getMatchWinner(MatchState& matchState)
 {
 	int topPoints = 0;
 	PlayerId highestPlayerId = -1;
-	for(int pIndex = 0;	pIndex < gameState._allPlayersCurrentStatus->size(); ++pIndex)
+	for(int pIndex = 0;	pIndex < matchState._allPlayersCurrentStatus->size(); ++pIndex)
 	{
-		if(topPoints < (*gameState._allPlayersCurrentStatus)[pIndex]->_points)
+		if(topPoints < (*matchState._allPlayersCurrentStatus)[pIndex]->_points)
 		{
-			highestPlayerId = (*gameState._allPlayersCurrentStatus)[pIndex]->_playerId;
-			topPoints = (*gameState._allPlayersCurrentStatus)[pIndex]->_points;
+			highestPlayerId = (*matchState._allPlayersCurrentStatus)[pIndex]->_playerId;
+			topPoints = (*matchState._allPlayersCurrentStatus)[pIndex]->_points;
 		}
 	}
 	return highestPlayerId;
 }
 
-int Rules::roundsToPlay(GameState& gameState)
+int Rules::roundsToPlay(MatchState& matchState)
 {
-	return gameState._allPlayersCurrentStatus->begin()->second->_cardsLeft;
+	return matchState._allPlayersCurrentStatus->begin()->second->_cardsLeft;
 
 }
 
@@ -116,12 +121,19 @@ int Rules::NumberOfInitialCards()
 	return 5;
 }
 
-CardSet* Rules::getLegalCards(GameState& iGameState, const CardSet& iCardSet)
+CardSet* Rules::getLegalCards(MatchState& iMatchState, const CardSet& iCardSet)
 {
-	CardSet* legalCardSet = iCardSet.getCardsBySuit(iGameState._masterSuit);
+	if (iMatchState.isFirstRound())
+	{
+		return (CardSet*)&iCardSet;
+	}
+	CardSet* legalCardSet = iCardSet.getCardsBySuit(iMatchState._masterSuit);
 	//cout << "legal cards: " << endl;
-	UserInterface::showPlayerCards(*legalCardSet);
-	return legalCardSet;
+	//UserInterface::showPlayerCards(*legalCardSet);
+	if(legalCardSet->size() == 0)
+		return (CardSet*)&iCardSet;
+	else
+		return legalCardSet;
 }
 
 

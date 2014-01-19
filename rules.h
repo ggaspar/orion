@@ -1,4 +1,4 @@
-#include "gameState.h"
+#include "matchState.h"
 #include "cardSet.h"
 
 
@@ -11,17 +11,17 @@ class Rules
   public :
 	Rules(){};
 
-	static int isStateValid(GameState& gameState, CardSet& cards, Card& playedCard);
+	static int isStateValid(MatchState& matchState, CardSet& cards, Card& playedCard);
 
-	static PlayerId getRoundWinner(GameState& gameState);
+	static PlayerId getRoundWinner(MatchState& matchState);
 
-	static PlayerId getGameWinner(GameState& gameState);
+	static PlayerId getMatchWinner(MatchState& matchState);
 
-	static CardSet* getLegalCards(GameState& gameState, const CardSet& iCardSet);
+	static CardSet* getLegalCards(MatchState& matchState, const CardSet& iCardSet);
 
 	static bool rValidSuit(CardSuit& masterCardSuit, CardSet& cards, Card& playedCard);
 	
-	static int roundsToPlay(GameState& gameState);
+	static int roundsToPlay(MatchState& matchState);
 	
 	static int NumberOfInitialCards();
 

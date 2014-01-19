@@ -20,7 +20,8 @@ class VisibleGameObject
 	virtual bool isLoaded() const;
 	void activate();
 	void deactivate();
-
+	bool isClicable() { return _isClickable; };
+	void setIsClickable(bool iIsClicable) { _isClickable = iIsClicable; }
 	int  _width, _height;
 
 
@@ -33,6 +34,7 @@ class VisibleGameObject
 	std::string _filename;
 	bool _isLoaded;
 	bool _isActivated;
+	bool _isClickable;
  
 };
 

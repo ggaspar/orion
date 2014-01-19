@@ -36,6 +36,7 @@ void CardSet::createDeck()
 	//_c1.SetPosition((800/2)-45,500);
 			pushCard(card);
 			Game::_gameObjectManager.add(card->getCardName(),card);
+			card->setIsClickable(false);
 	    }
 	}
 }
@@ -88,5 +89,13 @@ CardSet* CardSet::getCardsBySuit(CardSuit& iCardSuit) const
 		}
 	}	
 	return cardSetOfSuit;
+}
+
+void CardSet::makeCardsClickable()
+{
+	for(vector<Card*>::const_iterator itCards = cards.begin(); itCards!= cards.end(); ++itCards)
+	{
+		(*itCards)->setIsClickable(true);
+	}
 }
 

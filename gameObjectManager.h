@@ -5,7 +5,7 @@
 #define __GAME_OBJECT_MANAGER_H__
 
 class Card;
-
+using namespace std;
  class GameObjectManager
  {
  public:  
@@ -20,11 +20,13 @@ class Card;
    void drawAll(sf::RenderWindow& renderWindow);
    void GameObjectManager::updateAll(sf::Clock clock);
    VisibleGameObject* getClickedObject(sf::Vector2i clickPosition);
+   std::string getObjectNameByPos(sf::Vector2i clickPosition);
+   VisibleGameObject* getObjectByPos(sf::Vector2i clickPosition);
 
  
  private:
-	std::map<std::string, VisibleGameObject*> _gameObjects;
-
+	std::map<string, VisibleGameObject*> _gameObjects;
+	pair<string,VisibleGameObject*>  getObjectPair(sf::Vector2i clickPosition, bool onlyClickable=true);
    
    struct GameObjectDeallocator
    {

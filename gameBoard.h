@@ -4,7 +4,7 @@
 #include "card.h"
 #include "PlayerHuman.h"
 #include "PlayerDerp.h"
-#include "GameState.h"
+#include "MatchState.h"
 #include <map> 
 #include "gameObjectManager.h"
 
@@ -22,51 +22,59 @@ using namespace std;
 class GameBoard
 {
 
-	enum GamePhase
-	{
-		StartingRound,
-		Playing
-	};
 
 	friend class Rules;
 	
  public :
-	GameBoard() : _gameState(0), isFirstRound(true)
+	GameBoard() : _matchState(0), isFirstRound(true)
 	{
 		_cards = new CardSet();
 		_cards->createDeck();
 		Player* player = new PlayerHuman("Human");
-		PlayerId id = addPlayer(player);
+		PlayerId id = addPlayer(player, CardinalPosition::South);
 		player = new PlayerDerp("Derp");
-		id = addPlayer(player);
+		id = addPlayer(player, CardinalPosition::North);
 		_currentGamePhase = StartingRound;
 	};
 
+	enum GamePhase
+	{
+		StartingRound,
+		Playing,
+		NotPlaying,
+		EndingRound,
+		FinishingMatch
+	};
 
-	void go();
+
+
+	GamePhase go();
+	void ShowStats();
+	void processMatchWinner();
+
+
 
  private : 
 	void playOneRound();
 
-	void announceWinner();
 
 	Player* getCurrentPlayer();
 
-	void UpdateGameState();
+	void UpdateMatchState();
 
 	void defineFirstToPlay();
 
 	void playCard();
 	
-	PlayerId addPlayer(Player* iPlayer);
+	PlayerId addPlayer(Player* iPlayer, CardinalPosition pos);
 
 	PlayerId getNextPlayer();	
 
-	void newRound(PlayerId winner);
+	void newRound();
 
 	void addCardToCurrentPlayer(Card* card);
 
-	void addPoint(PlayerId id);
+	void addPoint();
 	
 	std::map<string,int> getScore() const;
 
@@ -74,24 +82,26 @@ class GameBoard
 	
 	void endRound();
 
-	GameState getGameState();
+	MatchState getMatchState();
 
-	void startGame();
+	void startNewMatch();
 
 	int getNumberOfPlayers() const;
 
 	PlayerStatus* getCurrentPlayerStatus();
 
+	void cleanPlayedCards();
 
 
 	map<PlayerId, Player*> _players;
 	CardSet* _cards;
 	map<PlayerId, PlayerStatus*> _allPlayersStatus;
-	GameState* _gameState;
+	MatchState* _matchState;
 	PlayerId _currentPlayer_id, _previousRoundWinner;
 	bool isFirstRound;
 	GameObjectManager* _gameObjectManager;
 	GamePhase _currentGamePhase;
+
 
 };
 

@@ -1,68 +1,94 @@
 #include <iostream>
 #include <string>
-#include "resources.h"
-
-#ifndef __CARD_H__
-#define __CARD_H__
+#include "visibleGameObject.h"
+#include "tools.h"
+#include "card.h"
 
 using namespace std;
 
-class CardFace
+Card::Card(char face, char suit, int rank) : _face(face), _suit(suit), _rank(rank), _beingPlayed(false), _velocity(-1)//,_width(75), _height(107)
 {
- public :
-  CardFace() : _cFace('\0'){};
-  CardFace(char cFace) : _cFace(cFace){};
-  char _cFace;
-  bool operator==(const CardFace& otherCf) const
-  {
-   return otherCf._cFace==_cFace;
-  };
+	std::stringstream ss;
+	ss << "assets/images/cards/" << getSuitName() << "-" << _face._cFace << "-75.png";
+	string cardName = ss.str();
+	load(cardName);
+	//assert(isLoaded());
+	VisibleGameObject::_width = 75;
+	VisibleGameObject::_height = 107;
 };
 
-class CardSuit
+//TODO: review this copy constructor
+Card::Card(const Card& c) : _face(c._face), _suit(c._suit), _rank(c._rank), _beingPlayed(false), _velocity(-1)//,  _width(75), _height(107)
 {
- public :
-	 CardSuit() : _cSuit('\0'){};
-  CardSuit(char cSuit) : _cSuit(cSuit) {};
-  char _cSuit;
-  bool operator==(const CardSuit& otherCs) const
-  {
-   return otherCs._cSuit==_cSuit;
-  };
-  
-  friend ostream& operator<<(ostream &out, const CardSuit& c)
-  {
-   cout <<  c._cSuit;
-   return out;
-
-  }
-
+	std::stringstream cardName;
+	cardName << "assets/images/cards/" << getSuitName() << "-" << _face._cFace << "-75.png";
+	string strCardName = cardName.str();
+	load(strCardName);
+	//assert(isLoaded());
+	VisibleGameObject::_width = 75;
+	VisibleGameObject::_height = 107;
 };
 
-  
-  CardFace _face;
-  CardSuit _suit;
-  int _rank;
-
-  friend ostream& Card::operator<<(ostream &out, const Card& c)
-  {
-	  out << c._face._cFace << " " << c._suit._cSuit;
-   return out;
-  };
-  friend bool operator>(const Card& c1, const Card& c2)
-  {
-    return c1._rank > c2._rank;
-  };
-  friend bool operator<(const Card& c1, const Card& c2)
-  {
-    return c1._rank < c2._rank;
-  };
-  bool operator==(const Card& otherC) const
-  {
-   return otherC._face==_face && otherC._suit==_suit;
-  };
-
+string Card::getSuitName()
+{
+	if(_suit._cSuit == 'D')
+		return "diamonds";
+	if(_suit._cSuit == 'C')
+		return "clubs";
+	if(_suit._cSuit == 'S')
+		return "spades";
+	else //		if(_suit._cSuit == 'D')
+		return "hearts";
 };
 
 
-#endif
+string Card::getCardName()
+{
+	std::stringstream cardName;
+	cardName << _face._cFace << _suit._cSuit;
+	return cardName.str();			
+}
+CardFace _face;
+CardSuit _suit;
+int _rank;
+float _velocity;
+bool _beingPlayed;
+
+void Card::playCard()
+{
+	cout << "card is going to be played" << endl;
+	_beingPlayed = true;
+}
+	
+
+bool Card::isCentered()
+{
+	sf::Vector2f pos = getPosition();
+
+	if(pos.y < (600/2) - 45)
+		return true;
+	return false;
+}
+
+void Card::update(float elapsedTime)
+{
+	sf::Vector2f pos = this->getPosition();
+		
+	if(_beingPlayed)// && !isCentered())
+	{
+		//getSprite().move(0, _velocity * elapsedTime );
+		this->setPosition(_playedPosition.x, _playedPosition.y);
+	}
+}
+
+void Card::setPlayedPosition(sf::Vector2f iPlayedPosition)
+{
+	_playedPosition = iPlayedPosition;
+}
+
+sf::Vector2f Card::getPlayedPosition()
+{
+	return _playedPosition;
+}
+
+

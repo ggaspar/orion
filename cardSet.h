@@ -32,6 +32,8 @@ class CardSet
 
 	CardSet* getCardsBySuit(CardSuit& CardSuit) const;
 
+	void makeCardsClickable();
+
  private :
 	vector<Card*> cards;
 };

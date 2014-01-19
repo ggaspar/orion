@@ -1,39 +1,40 @@
-#include "gameState.h"
+#include "matchState.h"
 
-bool GameState::isPlayerFirstToPlay(PlayerId player)
+bool MatchState::isPlayerFirstToPlay(PlayerId player)
 {
 	return (*_allPlayersCurrentStatus)[player]->_isFirst;
 }
-bool GameState::hasPlayerPlayed(const PlayerId player)
+bool MatchState::hasPlayerPlayed(const PlayerId player)
 {
 	return (*_allPlayersCurrentStatus)[player]->_played;
 }
 
-Card* GameState::getCardOfPlayer(PlayerId player)
+Card* MatchState::getCardOfPlayer(PlayerId player)
 {
 	return (*_allPlayersCurrentStatus)[player]->_card;
 }
 
-void GameState::defineFirstToPlay(PlayerId player)
+void MatchState::defineFirstToPlay(PlayerId player)
 {
 	(*_allPlayersCurrentStatus)[player]->_isFirst=true;
 }
 
-void GameState::playerPlays(PlayerId player)
+void MatchState::playerPlays(PlayerId player)
 {
 	(*_allPlayersCurrentStatus)[player]->_played=true;
 	(*_allPlayersCurrentStatus)[player]->_cardsLeft--;
 }
-void GameState::newRound(PlayerId winner)
+void MatchState::newRound(PlayerId winner)
 {
 	for(int pIndex = 0;	pIndex < (*_allPlayersCurrentStatus).size(); ++pIndex)
 	{ 
 		(*_allPlayersCurrentStatus)[pIndex]->_played=false;		
 		(*_allPlayersCurrentStatus)[pIndex]->_isFirst = (winner==(*_allPlayersCurrentStatus)[pIndex]->_playerId);
-	}
+	}	
+	++_roundNumber;
 }
 
-void GameState::addCardToPlayer(PlayerId player, Card* card)
+void MatchState::addCardToPlayer(PlayerId player, Card* card)
 {
 	if(isPlayerFirstToPlay(player))
 	{
@@ -42,7 +43,19 @@ void GameState::addCardToPlayer(PlayerId player, Card* card)
 	(*_allPlayersCurrentStatus)[player]->_card=card;
 }
 
-void GameState::addPoint(PlayerId player)
+void MatchState::addPoint(PlayerId player)
 {
 	(*_allPlayersCurrentStatus)[player]->_points++;
+}
+
+bool MatchState::isFirstRound()
+{
+	for(int pIndex = 0;	pIndex < (*_allPlayersCurrentStatus).size(); ++pIndex)
+	{ 
+		if((*_allPlayersCurrentStatus)[pIndex]->_played)
+		{
+			return false;
+		}
+	}
+	return true;
 }

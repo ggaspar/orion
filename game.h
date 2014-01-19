@@ -11,7 +11,7 @@
 class Game
 {
 
-	enum GameState2
+	enum GameState
 	{
 		Uninitialized,
 		ShowingSplash,
@@ -44,12 +44,15 @@ class Game
  private :	
 	static map<PlayerId,string> _players;
 	
-	static GameState2 _gameState;		
+	static GameState _gameState;		
 	//static CardSet* _cards;
 	//static Rules* _rules;
 	static GameBoard* _gameBoard;
 	static sf::RenderWindow _mainWindow;
 	static sf::Clock _clock;
+	static GameBoard::GamePhase _matchPhase;
+	static float _waitingTime;
+
 	
 	
 	static bool isExiting();
@@ -59,6 +62,7 @@ class Game
 	static void showMenu();
 	static void plays();
 	static void showDebug();
+	
  
 };
 #endif
